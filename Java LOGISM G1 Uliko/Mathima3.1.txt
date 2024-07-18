@@ -1,0 +1,52 @@
+Scanner objects:
+Για να πάρουμε κάποιο δεδομένο από την κονσόλα, τότε θα πρέπει να δημιουργήσουμε ένα scanner object. Το scanner object, είναι υπεύθυνο να δεχτεί ένα data stream και να το χρησιμοποιήσει στο πρόγραμμα. Όπως όλα τα objects στην Java, η δήλωση του, χωρίζεται σε δύο μέρη, το object reference, και το object initialization.
+Scanner <όνομα> = new Scanner(<μέσο εισαγωγής>);
+π.χ. Scanner input = new Scanner(System.in);
+To System.in αφορά την default είσοδο του συστήματος, δηλαδή το πληκτρολόγιο. 
+
+Import:
+Πολλές φορές, μπορούμε να ομαδοποιήσουμε κάποιες προκαθορισμένες classes σε packages. Στην Java, υπάρχουν κάποια στάνταρ packages, τα οποία έχουν κάμποσες classes που χρησιμοποιούνται συχνά. Αυτά συνήθως ονομάζονται είτε Java class library ή Java Application Programming Interface (Java API).
+Όταν κάνουμε ένα import, λέμε στον compiler να βρει μία class που χρησιμοποιείται στο πρόγραμμά μας. Για παράδειγμα, λέμε, πως θέλουμε την Scanner class από το πακέτο το οποίο ονομάζεται java.util. 
+Ένα import μπορεί να περιλαμβάνει παραπάνω από μία ομαδοποιήσεις. Για παράδειγμα μπορεί να υπάρχει η java.util ή η java.awt ή η javax.swing κλπ. Μπορούμε να προσπελάσουμε τις classes που βρίσκονται σε αυτά τα group είτε καλώντας τες με το όνομά τους, είτε χρησιμοποιώντας τον χαρακτήρα μπαλαντέρ (*).
+Για παράδειγμα:
+java.util.Scanner; <---Καλώ την class με το όνομά της.
+java.util.*; <--- Φέρνει ΟΛΕΣ τις classes που βρίσκονται στην java.util.
+Πάντα στο import, το specific έχει προτεραιότητα από το γενικό. Άρα, αν γράψω:
+java.util.*;
+και από κάτω γράψω:
+jdk.nashorh.internal.parser.Scanner; 
+To Scanner θα το δέχεται από την ΕΙΔΙΚΗ δήλωση, και έτσι δεν θα δει το Scanner της γενικής.
+
+Αν θέλω να βάλω δύο imports με το ίδιο όνομα, τότε, όταν καλώ το αντίστοιχο class θα πρέπει να του εξειδικεύω ποιό από τα δύο χρησιμοποιώ.
+Παράδειγμα:
+java.util.Scanner input = new java.util.Scanner(System.in);
+
+Object References:
+Το όνομα ενός object, δεν είναι το ίδιο το object καθ' ευατό, αλλά είναι ένα reference το οποίο δείχνει στον χώρο στην μνήμη που έχει δημιουργηθεί ένα object. Άρα, αν κάνω π.χ.
+String s; Τότε ΔΕΝ δημιουργώ ένα string object, αλλά δημιουργώ μία string object reference. Για να δημιουργήσω ένα string object, θα πρέπει να καλέσω τον constructor του string. Άρα, όταν κάνω Scanner input, δεν δημιουργώ ένα Scanner object, αλλά μία Scanner object reference, και μετά θα πρέπει να δημιουργήσω το object χρησιμοποιώντας τον constructor του, και να κάνω μία ανάθεση στο αντίστοιχο reference. Άρα μπορώ να κάνω το ακόλουθο:
+
+Scanner input;
+input = new Scanner(System.in);
+
+Σε αυτή την αλληλουχία εντολών, δημιουργώ στην πρώτη γραμμή ένα Scanner object reference, και στην δεύτερη γραμμή αναθέτω τον χώρο που δημιουργείται στην μνήμη μέσω του object initialization μέσω του constructor στο Scanner object reference.
+
+Π.χ. Οι εντολές:
+
+String s1;  // Δημιουργώ μία string object reference
+String s2;  // Δημιουργώ μί δεύτερη string object reference
+s1="Chris"; // Αρχικοποιώ το string object (το βάζω στην μνήμη) και η reference δείχνει σε 	αυτό.
+s2=s1;      // To string object reference s2 δείχνει στό ίδιο string object στο οποίο δείχνει και το string object reference s1.
+s1=s1+" Stavropoulos"; // Επειδή το string είναι Immutable (μάθημα 2) δημιουργείται ένα ΝΕΟ string, το οποίο περιέχει το "Chris Stavropoulos" άρα, το s1 δείχνει στο νέο string που μόλις δημιουργήθηκε, και το s2 δείχνει στο παλιό string.
+
+
+IF statement:
+
+if ( <λογική πράξη> ) <εντολή>;
+  [else <εντολή>;]
+
+Τελεστές (Operators)
+
++ - (Πρόσημο, πρώτη προτεραιότητα)
+* / % (πολλαπλασιασμός, διαίρεση, ακέραιο υπόλοιπο, δεύτερη προτεραιότητα)
++ - (πρόσθεση, αφαίρεση, τρίτη προτεραιότητα)
+< > <= >= == != (μικρότερο, μεγαλύτερο, μικρότερο ή ίσο, μεγαλύτερο ή ίσο, ίσο, διάφορο - Λογικοί τελεστές)

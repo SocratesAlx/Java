@@ -1,0 +1,324 @@
+
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(20),
+    last_name VARCHAR(20),
+    fathers_name VARCHAR(20),
+    mothers_name VARCHAR(20),
+    afm VARCHAR(9),
+    amka VARCHAR(11),
+    adress VARCHAR(20),
+    employee_type INT CHECK (employee_type BETWEEN 0 AND 2) DEFAULT 0,
+    salary_type INT CHECK (salary_type BETWEEN 0 AND 1) DEFAULT 0,
+    username VARCHAR(20),
+    password VARCHAR(20),
+    children_count INT,
+    married INT CHECK (married IN (0, 1)) DEFAULT 0,
+    level_of_education INT CHECK (level_of_education IN (0, 1)) DEFAULT 0,
+    date_stopped DATE,
+    position VARCHAR(10),
+    department VARCHAR(10)
+);
+
+
+--
+CREATE TABLE emails (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	email1 VARCHAR(40) ,
+    email2 VARCHAR(40) 
+);
+
+--
+
+CREATE TABLE telephones (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	telephone VARCHAR(20) 
+      
+);
+
+CREATE TABLE salary_history  (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	Salary INT,
+    start_date DATE,
+	end_date DATE
+);
+
+ --
+CREATE TABLE health_history (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+    start_date DATE,
+	end_date DATE
+     
+    
+);
+--
+CREATE TABLE absence_history (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+    start_date DATE,
+	end_date DATE
+ 
+); 
+
+CREATE TABLE hours_work (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	hours INT,
+    month INT,
+	year INT
+ 
+); 
+  
+CREATE TABLE aneu_apodoxon (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	total INT,
+    month INT,
+	year INT
+ 
+); 
+  
+  
+CREATE TABLE final_salary (
+	id        INT AUTO_INCREMENT PRIMARY KEY,
+    afm      VARCHAR(9 )  ,
+	dateOfPayment DATE,
+    salary INT,
+	totalAbsences INT,
+	totalHealthAbsences INT,
+	totalAneu INT
+ 
+); 
+ ----------------------------------------------------
+ 
+  
+ -- Inserting data into the employees table
+INSERT INTO employees (first_name, last_name, fathers_name, mothers_name, afm, amka, adress, employee_type, salary_type, username, password, children_count, married, level_of_education, date_stopped, position, department)
+VALUES 
+('John', 'Doe', 'Michael', 'Anna', '123456789', '12345678901', '123 Main St', 2, 1, 'one', 'two', 2, 1, 1, NULL, 'Manager', 'HR'),
+('Jane', 'Smith', 'David', 'Sarah', '987654321', '98765432101', '456 Elm St', 0, 0, 'janesmith', 'password123', 1, 0, 0, NULL, 'Assistant', 'Marketing'),
+('Alice', 'Johnson', 'Robert', 'Emily', '456789012', '45678901201', '789 Oak St', 1, 0, 'alicejohnson', 'pass123', 0, 1, 1, NULL, 'Developer', 'IT');
+
+-- Inserting data into the emails table
+INSERT INTO emails (afm, email1, email2)
+VALUES 
+('123456789', 'john.doe@example.com', 'john.doe.personal@example.com'),
+('987654321', 'jane.smith@example.com', NULL),
+('456789012', 'alice.johnson@example.com', 'alice.johnson.personal@example.com');
+
+-- Inserting data into the telephones table
+INSERT INTO telephones (afm, telephone)
+VALUES 
+('123456789', '123-456-7890'),
+('987654321', '987-654-3210'),
+('456789012', '456-789-0120');
+
+-- Inserting data into the salary_history table
+INSERT INTO salary_history (afm, Salary, start_date, end_date)
+VALUES 
+('123456789', 50000, '2023-01-01',   '2023-01-31'),
+('987654321', 40000, '2023-01-01', '2023-01-31'),
+('456789012', 3000, '2023-01-01',  '2023-01-31'),
+('123456789', 5000, '2023-01-01',  '2023-05-31'),
+('987654321', 7000, '2023-01-01',   '2023-05-31'),
+('456789012', 60000, '2023-01-01',  '2023-05-31');
+-- Inserting data into the health_history table
+INSERT INTO health_history (afm, start_date, end_date)
+VALUES 
+('123456789', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() *4) DAY)),
+('987654321', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() * 4) DAY)),
+('456789012', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() * 4) DAY));
+
+-- Inserting data into the absence_history table
+INSERT INTO absence_history (afm, start_date, end_date)
+VALUES 
+('123456789', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() * 4) DAY)),
+('987654321', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() * 4) DAY)),
+('456789012', '2023-01-01', DATE_ADD('2023-01-01', INTERVAL ROUND(RAND() * 4) DAY));
+
+INSERT INTO hours_work (afm, hours, month, year)
+VALUES 
+('987654321', 160, 1, 2023);
+
+
+INSERT INTO aneu_apodoxon (afm, total, month, year) VALUES
+('123456789', 3, 1, 2023),
+('456789012', 4, 1, 2023);
+ 
+INSERT INTO hours_work (afm, hours, month, year)
+VALUES 
+('987654321', 360, 5, 2023);
+ 
+DROP PROCEDURE IF EXISTS CalculateSalary2;
+
+
+
+DELIMITER //
+
+CREATE PROCEDURE CalculateSalary2(
+    IN employee_afm VARCHAR(9),
+    IN salary_month INT,
+    OUT final_salary INT)
+BEGIN
+    DECLARE emp_salary INT;
+    DECLARE absence_penalty DECIMAL(10, 2);
+    DECLARE total_absence_days INT DEFAULT 0;
+    DECLARE month_start DATE;
+    DECLARE month_end DATE;
+    DECLARE current_year INT;
+
+    -- Determine the current year.
+    SET current_year = 2023;
+
+    -- Determine the start and end dates of the specified month for the current year.
+    SET month_start = STR_TO_DATE(CONCAT(current_year, '-', salary_month, '-01'), '%Y-%m-%d');
+    SET month_end = LAST_DAY(month_start);
+
+    -- Get the employee's salary from the salaries table.
+    SELECT Salary INTO emp_salary 
+    FROM salary_history 
+    WHERE afm = employee_afm AND month_start BETWEEN start_date AND end_date;
+    -- Output for debugging: Employee's salary.
+    SELECT emp_salary AS 'Employee Salary';
+
+    -- Calculate total days of absence for the specified month from the absence_history table.
+    SELECT total INTO total_absence_days
+    FROM aneu_apodoxon 
+    WHERE afm = employee_afm  ;
+    -- Output for debugging: Total days of absence.
+    SELECT IFNULL(total_absence_days, 0) AS 'Total Aneu Days';
+
+    -- Calculate absence penalty based on total absence days.
+    SET absence_penalty = IFNULL(total_absence_days, 0) * (emp_salary / 25); -- Assuming 25 working days for penalty calculation.
+    -- Output for debugging: Absence penalty.
+    SELECT absence_penalty AS 'Absence Penalty';
+
+    -- Determine final salary based on employee_type.
+    IF (SELECT employee_type FROM employees WHERE afm = employee_afm) =2 THEN
+        -- Deduct absence penalty from the salary for employee_type = 0.
+        SET final_salary = emp_salary - CAST(absence_penalty AS UNSIGNED);
+    ELSE
+        -- If employee_type is not 0, the original salary remains unchanged.
+        SET final_salary = emp_salary;
+    END IF;
+    -- Output for debugging: Final salary.
+ 
+END //
+
+DELIMITER ;
+
+
+ 
+DROP PROCEDURE IF EXISTS CalculateSalary1;
+
+DELIMITER //
+
+CREATE PROCEDURE CalculateSalary1(
+    IN employee_afm VARCHAR(9),
+    IN salary_month INT,
+    OUT final_salary INT)
+BEGIN
+    DECLARE emp_salary INT;
+    DECLARE absence_penalty DECIMAL(10, 2);
+    DECLARE total_absence_days INT DEFAULT 0;
+    DECLARE month_start DATE;
+    DECLARE month_end DATE;
+    DECLARE current_year INT;
+
+    -- Determine the current year.
+    SET current_year = 2023;
+
+    -- Determine the start and end dates of the specified month for the current year.
+    SET month_start = STR_TO_DATE(CONCAT(current_year, '-', salary_month, '-01'), '%Y-%m-%d');
+    SET month_end = LAST_DAY(month_start);
+
+    -- Get the employee's salary from the salaries table.
+    SELECT Salary INTO emp_salary 
+    FROM salary_history 
+    WHERE afm = employee_afm AND month_start BETWEEN start_date AND end_date;
+    -- Output for debugging: Employee's salary.
+    SELECT emp_salary AS 'Employee Salary';
+
+    -- Calculate total days of absence for the specified month from the absence_history table.
+    SELECT total INTO total_absence_days
+    FROM aneu_apodoxon 
+    WHERE afm = employee_afm  ;
+    -- Output for debugging: Total days of absence.
+    SELECT IFNULL(total_absence_days, 0) AS 'Total Aneu Days';
+	
+    
+ 
+   SET total_absence_days := IF(total_absence_days <= 3, 0, total_absence_days - 3);
+
+	   
+ 
+    -- Calculate absence penalty based on total absence days.
+    SET absence_penalty = IFNULL(total_absence_days, 0) * (emp_salary / 25); -- Assuming 25 working days for penalty calculation.
+    -- Output for debugging: Absence penalty.
+    SELECT absence_penalty AS 'Absence Penalty';
+
+    -- Determine final salary based on employee_type.
+    IF (SELECT employee_type FROM employees WHERE afm = employee_afm) =1 THEN
+        -- Deduct absence penalty from the salary for employee_type = 0.
+        SET final_salary = emp_salary - CAST(absence_penalty AS UNSIGNED);
+    ELSE
+        -- If employee_type is not 0, the original salary remains unchanged.
+        SET final_salary = emp_salary;
+    END IF;
+    -- Output for debugging: Final salary.
+ 
+
+END //
+
+DELIMITER ;
+
+
+  
+DROP PROCEDURE IF EXISTS CalculateSalary0;
+
+DELIMITER //
+
+CREATE PROCEDURE CalculateSalary0(
+    IN employee_afm VARCHAR(9),
+    IN work_month INT,
+    OUT final_salary INT)
+BEGIN
+    DECLARE emp_salary INT;
+    DECLARE absence_penalty DECIMAL(10, 2);
+    DECLARE total_absence_days INT DEFAULT 0;
+   
+    DECLARE current_year INT;
+	DECLARE earnperhour INT;
+ 
+    DECLARE hoursWorked INT;
+    -- Determine the current year.
+    SET current_year = 2023;
+	SET earnperhour = 10;
+    
+
+     
+   -- Fetch the hours worked for the specified employee from the hours_work table.
+	SELECT IFNULL(hours, 0) INTO hoursWorked 
+	FROM hours_work 
+	WHERE afm = employee_afm AND  month = work_month ;
+
+	-- Output for debugging: Total hours worked.
+	SELECT hoursWorked AS 'Total Hours Worked';
+		
+    
+  
+	   
+ 
+    -- Calculate absence penalty based on total absence days.
+    SET final_salary = hoursWorked * earnperhour ; -- Assuming 25 working days for penalty calculation.
+    
+
+END //
+
+DELIMITER ;
+
+ 

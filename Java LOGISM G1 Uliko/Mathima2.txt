@@ -1,0 +1,27 @@
+H Java έχει μία Main Class η οποία περιέχει το κυρίως πρόγραμμά μας. Η Main Class αυτή πρέπει πάντα να είναι public, και μέσα της περιέχει την main method του προγράμματος.
+
+Στην C++ είχαμε πει πως κάθε class ΠΑΡΑΓΕΙ OBJECTS, και περιέχει δύο είδη στοιχείων: 
+Α) Member Functions 
+Β) Data Members
+Στην Java (και στην C#) αυτά ονομάζονται:
+A) Methods
+B) Data
+
+To main είναι δεσμευμένη λέξη, και ορίζει την κύρια Method του προγράμματός μου.
+Η κύρια method είναι static, δηλαδή, αυτή η method ΑΝΗΚΕΙ στο class, και όχι σε παραγόμενα objects.
+
+Strings are Immutable.
+O κανόνας του string immutability, λέει πως κανένα string δεν μεταβάλλεται. Αντίθετα, τα strings που θέλουμε να αλλάξουμε, εσωτερικά, αντικαθίστανται με άλλα strings.
+Όταν αντικαθίσταται ένα string, το string reference (το όνομα του string κοινώς) δείχνει στην νέα θέση, και το παλιό string μένει στην μνήμη, ώσπου μία λειτουργία του compiler που λέγεται garbage collector το καταστρέψει... Ή χρησιμοποιήσω ένα νέo/άλλο string με αυτή την αξία, πράγμα που κάνει τον compiler να αναθέσει το νέο string reference στην ήδη υπάρχουσα δεσμευμένη μνήμη.
+
+Upcasting και Downcasting:
+Upcasting είναι η δυνατότητα ενός data type να μετατραπεί σε ένα data type ανώτερο. Δηλαδή για παράδειγμα, ένας integer να γίνει float, ή string. 
+Downcasting είναι η δυνατότητα ενός data να χωρέσει σε ένα μικρότερο τύπο. Για παράδειγμα, ένας float να μπει σε ένα integer.
+
+Primitive data types.
+Σαν primitive data types ορίζονται τα data types που δεν είναι classes, ή δεν περιέχουν μεθόδους. Αυτά είναι τα βασικά data types, όπως, int, float, double, char, boolean, κλπ.
+
+Έτσι, συνήθως, ένα primitive data type μπορεί να γίνει upcast σε ένα ανώτερο data type. Αντίθετα, ένα ανώτερο data type, πολλές φορές δεν μπορεί να γίνει downcast σε ένα primitive data type. π.χ, ένα int μπορεί να γίνει upcast σε string, αλλά ένα string δεν μπορεί να γίνει downcast σε int.
+
+To upcast και το downcast, γίνεται συνήθως όταν υπάρχει ανάθεση, ή πράξεις (που συνήθως οδηγούν σε ανάθεση). Άρα αν κάνω:
+"This"+9 πρακτικά, κάνω upcast το 9 σε string, "9" και μετά, κάνω την πράξη μεταξύ strings "Τhis" + "9"
