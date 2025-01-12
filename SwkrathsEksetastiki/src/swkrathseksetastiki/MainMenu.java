@@ -4,10 +4,16 @@
  */
 package swkrathseksetastiki;
 
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 
 
 
@@ -24,25 +30,141 @@ public class MainMenu extends javax.swing.JFrame {
     public MainMenu() {
         initComponents();
         updateTotalStaffCount();
+        loadTableNames();
+    }
+    
+    private void loadTableNames() {
+          try (Connection conn = DBConnection.connect();
+             ResultSet rs = conn.getMetaData().getTables("SwkrathsCompany", null, "%", new String[]{"TABLE"})) {
+
+            jComboBox1.removeAllItems(); // Clear existing items
+            while (rs.next()) {
+                String tableName = rs.getString("TABLE_NAME");
+                jComboBox1.addItem(tableName); // Add each table name to the combo box
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading table names: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void updateTotalStaffCount() {
     String query = "SELECT COUNT(StaffID) AS totalStaff FROM Staff";
 
-    try (Connection conn = DBConnection.connect();
-         PreparedStatement pstmt = conn.prepareStatement(query);
-         ResultSet rs = pstmt.executeQuery()) {
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
 
-        if (rs.next()) {
-            int totalStaff = rs.getInt("totalStaff");
-            System.out.println("Total Staff Count: " + totalStaff); // Debug log
-            jLabel1.setText("Total Staff: " + totalStaff); // Update JLabel
+            if (rs.next()) {
+                int totalStaff = rs.getInt("totalStaff");
+                jLabel1.setText("Total Staff: " + totalStaff);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error fetching total staff count: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-        javax.swing.JOptionPane.showMessageDialog(this, "Error fetching total staff count!", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-    }
 }
+    
+     private void loadTableData(String tableName) {
+           if (tableName == null || tableName.trim().isEmpty()) {
+            return;
+        }
+
+        String query = "SELECT * FROM " + tableName; // Query to fetch all data from the selected table
+        try (Connection conn = DBConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            DefaultTableModel model = new DefaultTableModel();
+
+            // Add column names
+            for (int i = 1; i <= columnCount; i++) {
+                model.addColumn(metaData.getColumnName(i));
+            }
+
+            // Add row data
+            while (rs.next()) {
+                Object[] rowData = new Object[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    rowData[i - 1] = rs.getObject(i);
+                }
+                model.addRow(rowData);
+            }
+
+            jTable1.setModel(model);
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading table data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+     
+      private void performSearch() {
+            String tableName = (String) jComboBox1.getSelectedItem(); // Get selected table name
+    String searchText = jTextField1.getText(); // Get search text
+
+    // Ensure table and search text are not null or empty
+    if (tableName == null || searchText == null || searchText.trim().isEmpty()) {
+        loadTableData(tableName); // Load the full table data if no search text
+        return;
+    }
+
+    StringBuilder query = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
+    try (Connection conn = DBConnection.connect();
+         Statement stmt = conn.createStatement()) {
+
+        // Fetch valid columns dynamically for the selected table
+        ResultSet rsColumns = conn.getMetaData().getColumns("SwkrathsCompany", null, tableName, null);
+        boolean hasValidColumns = false;
+
+        while (rsColumns.next()) {
+            String columnName = rsColumns.getString("COLUMN_NAME");
+
+            // Ensure column names are case-sensitive and valid for the table
+            query.append("`").append(columnName).append("`").append(" LIKE '%").append(searchText).append("%' OR ");
+            hasValidColumns = true;
+        }
+
+        if (!hasValidColumns) {
+            JOptionPane.showMessageDialog(this, "No valid columns found for table: " + tableName, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Remove the trailing " OR " from the query
+        if (query.toString().endsWith(" OR ")) {
+            query.setLength(query.length() - 4);
+        }
+
+        System.out.println("Generated Query: " + query); // Debugging: Print the query to console
+
+        // Execute the search query
+        ResultSet rs = stmt.executeQuery(query.toString());
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        DefaultTableModel model = new DefaultTableModel();
+
+        // Add column names to the table model
+        for (int i = 1; i <= columnCount; i++) {
+            model.addColumn(metaData.getColumnName(i));
+        }
+
+        // Add row data to the table model
+        while (rs.next()) {
+            Object[] rowData = new Object[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                rowData[i - 1] = rs.getObject(i);
+            }
+            model.addRow(rowData);
+        }
+
+        // Update the JTable with the search results
+        jTable1.setModel(model);
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Error performing search: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -61,6 +183,11 @@ public class MainMenu extends javax.swing.JFrame {
         jButton5 = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jComboBox1 = new javax.swing.JComboBox<>();
+        jTextField1 = new javax.swing.JTextField();
+        jButton6 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -142,6 +269,40 @@ public class MainMenu extends javax.swing.JFrame {
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/swkrathseksetastiki/icons8-staff-50.png"))); // NOI18N
         jLabel1.setText("Total Staff");
 
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        jScrollPane1.setViewportView(jTable1);
+
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
+
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+
+        jButton6.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jButton6.setText("SEARCH");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -151,13 +312,26 @@ public class MainMenu extends javax.swing.JFrame {
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 261, Short.MAX_VALUE)
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 378, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(226, 226, 226))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(77, 77, 77)
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addContainerGap())
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 34, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 378, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(226, 226, 226))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(11, 11, 11)
+                                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 136, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(197, 197, 197)
+                                        .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 812, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(19, 19, 19))))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -167,7 +341,14 @@ public class MainMenu extends javax.swing.JFrame {
                 .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(111, 111, 111)
                 .addComponent(jLabel1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(57, 57, 57)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 357, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(67, 67, 67))
         );
 
         pack();
@@ -175,7 +356,7 @@ public class MainMenu extends javax.swing.JFrame {
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         
-        LoginForm loginForm = new LoginForm();
+    LoginForm loginForm = new LoginForm();
     loginForm.setVisible(true);
 
     
@@ -209,6 +390,24 @@ public class MainMenu extends javax.swing.JFrame {
    
     this.dispose();
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        // TODO add your handling code here:
+         String selectedTable = (String) jComboBox1.getSelectedItem();
+        if (selectedTable != null) {
+            loadTableData(selectedTable);
+        }   
+    }//GEN-LAST:event_jComboBox1ActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // TODO add your handling code here:
+         performSearch();
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+        performSearch();
+    }//GEN-LAST:event_jTextField1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -251,8 +450,13 @@ public class MainMenu extends javax.swing.JFrame {
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
+    private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }
